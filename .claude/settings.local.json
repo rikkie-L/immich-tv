@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /workspace/immich-tv/app/src/main/java/com/immichtv/app/**/*.kt)"
+    ]
+  }
+}
