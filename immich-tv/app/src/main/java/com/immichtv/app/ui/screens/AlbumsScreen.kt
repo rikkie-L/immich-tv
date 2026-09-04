@@ -1,7 +1,6 @@
 package com.immichtv.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -41,7 +40,10 @@ fun AlbumsScreen(
                 )
             }
             state.error != null -> {
-                Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(state.error.orEmpty(), color = Color(0xFFCF6679))
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { viewModel.loadAlbums() }) { Text("Retry") }
@@ -78,8 +80,7 @@ fun AlbumsScreen(
                                 thumbnailUrl = thumbUrl,
                                 apiKey = state.apiKey,
                                 assetCount = album.assetCount,
-                                onClick = { onAlbumClick(album.id) },
-                                modifier = Modifier.focusable()
+                                onClick = { onAlbumClick(album.id) }
                             )
                         }
                     }

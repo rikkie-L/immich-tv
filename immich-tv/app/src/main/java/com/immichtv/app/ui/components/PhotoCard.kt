@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +26,7 @@ fun PhotoCard(
     apiKey: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isVideo: Boolean = false,
     aspectRatio: Float = 1f
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -40,6 +42,15 @@ fun PhotoCard(
             )
             .background(Color(0xFF1E1E1E))
             .onFocusChanged { isFocused = it.isFocused }
+            .onKeyEvent { event ->
+                // Ensure DPAD_CENTER / Enter triggers click on TV remote
+                if (event.type == KeyEventType.KeyDown &&
+                    (event.key == Key.Enter || event.key == Key.DirectionCenter)
+                ) {
+                    onClick()
+                    true
+                } else false
+            }
             .clickable { onClick() }
     ) {
         AsyncImage(
@@ -53,12 +64,33 @@ fun PhotoCard(
             modifier = Modifier.fillMaxSize()
         )
 
+        // Focus highlight
         if (isFocused) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.White.copy(alpha = 0.08f))
             )
+        }
+
+        // Video badge (bottom-left corner)
+        if (isVideo) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(4.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.72f),
+                        shape = RoundedCornerShape(3.dp)
+                    )
+                    .padding(horizontal = 5.dp, vertical = 2.dp)
+            ) {
+                androidx.compose.material3.Text(
+                    text = "▶",
+                    color = ImmichYellow,
+                    fontSize = 10.sp
+                )
+            }
         }
     }
 }
@@ -78,6 +110,14 @@ fun AlbumCard(
         modifier = modifier
             .width(200.dp)
             .onFocusChanged { isFocused = it.isFocused }
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown &&
+                    (event.key == Key.Enter || event.key == Key.DirectionCenter)
+                ) {
+                    onClick()
+                    true
+                } else false
+            }
             .clickable { onClick() }
     ) {
         Box(

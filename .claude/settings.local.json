@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc -l /workspace/immich-tv/app/src/main/java/com/immichtv/app/**/*.kt)"
+      "Bash(wc -l /workspace/immich-tv/app/src/main/java/com/immichtv/app/**/*.kt)",
+      "Bash(docker --version)",
+      "Bash(echo \"docker exit: $?\")",
+      "Bash(echo \"adb exit: $?\")",
+      "Bash(apt-get -s install curl)",
+      "Bash(curl -sI https://dl.google.com --max-time 5)",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/192.168.1.20/5555')",
+      "Bash(echo \"exit: $?\")",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/192.168.1.20/80')",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/10.99.99.99/5555')",
+      "Bash(ip route *)",
+      "Bash(apt-get update *)",
+      "Bash(apt-get install *)",
+      "Read(//tmp/**)",
+      "Bash(java -version)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git config *)"
     ]
   }
 }

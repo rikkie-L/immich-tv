@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.*
+import com.immichtv.app.data.model.Asset
 import com.immichtv.app.ui.theme.ImmichBackground
 import com.immichtv.app.ui.theme.ImmichSurface
 import com.immichtv.app.ui.theme.ImmichYellow
@@ -27,17 +28,17 @@ fun MainScreen(
     albumsViewModel: AlbumsViewModel = viewModel()
 ) {
     var currentDest by remember { mutableStateOf(NavDestination.Photos) }
-    var viewerState by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
+    var viewerState by remember { mutableStateOf<Pair<String, List<Asset>>?>(null) }
     var albumDetailId by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
 
     val photosState by homeViewModel.state.collectAsState()
 
     // Full-screen photo viewer
-    viewerState?.let { (assetId, assetIds) ->
+    viewerState?.let { (assetId, assets) ->
         PhotoViewerScreen(
             assetId = assetId,
-            assetIds = assetIds,
+            assets = assets,
             getOriginalUrl = { homeViewModel.getOriginalUrl(it) },
             apiKey = photosState.apiKey,
             onBack = { viewerState = null }
@@ -99,7 +100,7 @@ fun MainScreen(
             when {
                 currentDest == NavDestination.Photos -> {
                     PhotosScreen(
-                        onPhotoClick = { assetId, assetIds -> viewerState = Pair(assetId, assetIds) },
+                        onPhotoClick = { assetId, assets -> viewerState = Pair(assetId, assets) },
                         viewModel = homeViewModel
                     )
                 }
@@ -107,7 +108,7 @@ fun MainScreen(
                     val albumId = albumDetailId ?: return@NavigationDrawer
                     AlbumDetailScreen(
                         albumId = albumId,
-                        onPhotoClick = { assetId, assetIds -> viewerState = Pair(assetId, assetIds) },
+                        onPhotoClick = { assetId, assets -> viewerState = Pair(assetId, assets) },
                         onBack = { albumDetailId = null },
                         viewModel = albumsViewModel
                     )

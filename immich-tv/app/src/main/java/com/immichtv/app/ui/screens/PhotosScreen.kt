@@ -1,7 +1,6 @@
 package com.immichtv.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.*
+import com.immichtv.app.data.model.Asset
 import com.immichtv.app.ui.components.PhotoCard
 import com.immichtv.app.ui.theme.ImmichBackground
 import com.immichtv.app.ui.theme.ImmichYellow
@@ -23,7 +23,7 @@ import com.immichtv.app.viewmodel.HomeViewModel
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun PhotosScreen(
-    onPhotoClick: (assetId: String, assetIds: List<String>) -> Unit,
+    onPhotoClick: (assetId: String, assets: List<Asset>) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -63,7 +63,6 @@ fun PhotosScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     items(state.months) { month ->
-                        // Load assets when this month becomes visible
                         LaunchedEffect(month.timeBucket) {
                             if (month.assets.isEmpty() && !month.isLoading) {
                                 viewModel.loadMonthAssets(month.timeBucket)
@@ -85,21 +84,23 @@ fun PhotosScreen(
                                         .height(160.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(color = ImmichYellow, modifier = Modifier.size(24.dp))
+                                    CircularProgressIndicator(
+                                        color = ImmichYellow,
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
                             } else if (month.assets.isNotEmpty()) {
-                                val allIds = month.assets.map { it.id }
                                 LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    contentPadding = PaddingValues(end = 8.dp)
                                 ) {
                                     items(month.assets) { asset ->
                                         PhotoCard(
                                             thumbnailUrl = viewModel.getThumbnailUrl(asset.id),
                                             apiKey = state.apiKey,
-                                            onClick = { onPhotoClick(asset.id, allIds) },
-                                            modifier = Modifier
-                                                .size(160.dp)
-                                                .focusable()
+                                            isVideo = asset.type.uppercase() == "VIDEO",
+                                            onClick = { onPhotoClick(asset.id, month.assets) },
+                                            modifier = Modifier.size(160.dp)
                                         )
                                     }
                                 }

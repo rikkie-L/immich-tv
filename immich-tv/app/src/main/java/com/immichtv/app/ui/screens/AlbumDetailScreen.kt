@@ -1,7 +1,6 @@
 package com.immichtv.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -15,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.*
+import com.immichtv.app.data.model.Asset
 import com.immichtv.app.ui.components.PhotoCard
 import com.immichtv.app.ui.theme.ImmichBackground
 import com.immichtv.app.ui.theme.ImmichYellow
@@ -24,7 +24,7 @@ import com.immichtv.app.viewmodel.AlbumsViewModel
 @Composable
 fun AlbumDetailScreen(
     albumId: String,
-    onPhotoClick: (assetId: String, assetIds: List<String>) -> Unit,
+    onPhotoClick: (assetId: String, assets: List<Asset>) -> Unit,
     onBack: () -> Unit,
     viewModel: AlbumsViewModel = viewModel()
 ) {
@@ -50,7 +50,6 @@ fun AlbumDetailScreen(
                 val album = state.selectedAlbum
                 if (album != null) {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Header
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -70,14 +69,13 @@ fun AlbumDetailScreen(
                                     color = Color(0xFFEAEAEA)
                                 )
                                 Text(
-                                    text = "${album.assetCount} photos",
+                                    text = "${album.assetCount} items",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color(0xFF888888)
                                 )
                             }
                         }
 
-                        val allIds = album.assets.map { it.id }
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 180.dp),
                             contentPadding = PaddingValues(horizontal = 40.dp, vertical = 8.dp),
@@ -89,8 +87,8 @@ fun AlbumDetailScreen(
                                 PhotoCard(
                                     thumbnailUrl = viewModel.getThumbnailUrl(asset.id),
                                     apiKey = state.apiKey,
-                                    onClick = { onPhotoClick(asset.id, allIds) },
-                                    modifier = Modifier.focusable()
+                                    isVideo = asset.type.uppercase() == "VIDEO",
+                                    onClick = { onPhotoClick(asset.id, album.assets) }
                                 )
                             }
                         }
