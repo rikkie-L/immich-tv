@@ -24,10 +24,19 @@ RUN yes | sdkmanager --licenses > /dev/null && \
         "build-tools;35.0.0"
 
 WORKDIR /project
-COPY immich-tv/ .
 
-# Cache Gradle dependencies as a separate layer
-RUN ./gradlew dependencies --no-daemon -q || true
+# Copy only the build scripts first so the dependency-download layer stays
+# cached when only application sources change.
+COPY immich-tv/gradlew immich-tv/gradlew.bat ./
+COPY immich-tv/gradle/ gradle/
+COPY immich-tv/settings.gradle.kts immich-tv/build.gradle.kts immich-tv/gradle.properties ./
+COPY immich-tv/app/build.gradle.kts app/build.gradle.kts
+
+# Cache Gradle distribution + dependencies as a separate layer
+RUN chmod +x ./gradlew && ./gradlew dependencies --no-daemon -q || true
+
+# Now copy the rest of the project sources
+COPY immich-tv/ .
 
 # Build the debug APK
 RUN ./gradlew assembleDebug --no-daemon

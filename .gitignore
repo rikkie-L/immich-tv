@@ -1,0 +1,4 @@
+# Build artifacts extracted by deploy-shield.sh
+output/
+
+.DS_Store
