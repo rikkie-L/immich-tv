@@ -42,6 +42,10 @@ RUN ./gradlew dependencies --no-daemon -q || true
 # Now copy the rest of the project sources
 COPY immich-tv/ .
 
+# The COPY above re-copied gradlew from the build context, so strip CR again
+# (a Windows clone checks it out with CRLF, which breaks the shebang here).
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
+
 # Build the debug APK
 RUN ./gradlew assembleDebug --no-daemon
 
