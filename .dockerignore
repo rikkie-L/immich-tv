@@ -1,0 +1,16 @@
+# Keep the Docker build context small and host-independent.
+.git
+.claude
+.idea
+output/
+**/*.iml
+**/*.md
+
+# Host-specific / generated — must not leak into the image.
+# (The Dockerfile sets ANDROID_HOME, so local.properties is not needed in-container.)
+immich-tv/local.properties
+immich-tv/.gradle/
+immich-tv/.kotlin/
+immich-tv/build/
+immich-tv/app/build/
+immich-tv/captures/
