@@ -51,10 +51,16 @@ docker build -t "$IMAGE_NAME" "$SCRIPT_DIR"
 
 echo "==> Extracting APK from container..."
 mkdir -p "$APK_HOST_DIR"
-docker run --rm \
-    -v "$APK_HOST_DIR:/output" \
-    "$IMAGE_NAME" \
-    sh -c "cp /project/app/build/outputs/apk/debug/$APK_NAME /output/$APK_NAME"
+# Stream the APK out over stdout instead of a bind mount: Git Bash on Windows
+# rewrites the container path in `-v host:/output`, so the mount lands wrong.
+# MSYS_NO_PATHCONV keeps the in-container path intact; it is ignored elsewhere.
+MSYS_NO_PATHCONV=1 docker run --rm "$IMAGE_NAME" \
+    cat "/project/app/build/outputs/apk/debug/$APK_NAME" > "$APK_HOST_DIR/$APK_NAME"
+
+if [[ ! -s "$APK_HOST_DIR/$APK_NAME" ]]; then
+    echo "ERROR: APK extraction produced an empty file." >&2
+    exit 1
+fi
 
 echo "==> APK written to: $APK_HOST_DIR/$APK_NAME"
 
@@ -82,7 +88,8 @@ echo "==> Installing APK on $TARGET ..."
 adb -s "$TARGET" install -r "$APK_HOST_DIR/$APK_NAME"
 
 echo "==> Launching app..."
-adb -s "$TARGET" shell am start -n "$PKG/.MainActivity" >/dev/null
+# MSYS_NO_PATHCONV stops Git Bash from rewriting the "pkg/.Activity" argument.
+MSYS_NO_PATHCONV=1 adb -s "$TARGET" shell am start -n "$PKG/.MainActivity" >/dev/null || true
 
 echo ""
 echo "OK - 'Immich TV' should now be running on the TV."
