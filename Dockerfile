@@ -32,8 +32,12 @@ COPY immich-tv/gradle/ gradle/
 COPY immich-tv/settings.gradle.kts immich-tv/build.gradle.kts immich-tv/gradle.properties ./
 COPY immich-tv/app/build.gradle.kts app/build.gradle.kts
 
+# Strip CR from gradlew (a Windows clone may check it out with CRLF, which
+# breaks the shebang inside the container) and make it executable.
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
+
 # Cache Gradle distribution + dependencies as a separate layer
-RUN chmod +x ./gradlew && ./gradlew dependencies --no-daemon -q || true
+RUN ./gradlew dependencies --no-daemon -q || true
 
 # Now copy the rest of the project sources
 COPY immich-tv/ .

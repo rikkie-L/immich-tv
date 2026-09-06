@@ -1,0 +1,13 @@
+# Normalize line endings across platforms.
+# Text files check out with LF everywhere so shell scripts (e.g. gradlew)
+# stay runnable inside Linux containers even on a Windows clone.
+* text=auto eol=lf
+
+# Windows batch files must keep CRLF.
+*.bat text eol=crlf
+
+# Never touch these.
+*.jar binary
+*.png binary
+*.webp binary
+*.keystore binary
