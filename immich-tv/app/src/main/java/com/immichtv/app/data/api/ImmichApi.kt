@@ -1,5 +1,6 @@
 package com.immichtv.app.data.api
 
+import com.google.gson.JsonElement
 import com.immichtv.app.data.model.*
 import retrofit2.Response
 import retrofit2.http.*
@@ -38,7 +39,7 @@ interface ImmichApi {
         @Query("timeBucket") timeBucket: String,
         @Query("withPartners") withPartners: Boolean = true,
         @Query("isArchived") isArchived: Boolean = false
-    ): Response<List<Asset>>
+    ): Response<JsonElement>  // old Immich: array of assets; new Immich: columnar object
 
     @GET("api/server/about")
     suspend fun getServerInfo(): Response<ServerInfo>

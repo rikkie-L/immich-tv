@@ -87,10 +87,10 @@ fun MainScreen(
                             Text(dest.icon, style = MaterialTheme.typography.titleMedium)
                         }
                     ) {
-                        Text(
-                            text = dest.label,
-                            color = if (isSelected) ImmichYellow else Color(0xFFEAEAEA)
-                        )
+                        // No fixed colour: NavigationDrawerItem switches to dark text
+                        // on its light focus highlight (a fixed light colour made the
+                        // focused item unreadable).
+                        Text(text = dest.label)
                     }
                 }
             }

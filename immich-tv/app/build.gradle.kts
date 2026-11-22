@@ -23,7 +23,22 @@ android {
         }
     }
 
+    // Fixed debug key, committed on purpose: every Docker build otherwise
+    // generates a new random debug key, and the TV then refuses the update
+    // (INSTALL_FAILED_UPDATE_INCOMPATIBLE). Debug-only, not a release key.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

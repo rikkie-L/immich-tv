@@ -51,8 +51,15 @@ docker build -t "$IMAGE_NAME" "$SCRIPT_DIR"
 
 echo "==> Extracting APK from container..."
 mkdir -p "$APK_HOST_DIR"
-docker run --rm \
-    -v "$APK_HOST_DIR:/output" \
+# On Git Bash / MSYS2 (Windows) the shell rewrites "/d/...:/output" into a
+# broken Windows path (this is what created the stray "output;C" folder).
+# Convert the host path to "D:/..." form and disable MSYS path conversion.
+DOCKER_HOST_DIR="$APK_HOST_DIR"
+if command -v cygpath >/dev/null 2>&1; then
+    DOCKER_HOST_DIR="$(cygpath -m "$APK_HOST_DIR")"
+fi
+MSYS_NO_PATHCONV=1 docker run --rm \
+    -v "$DOCKER_HOST_DIR:/output" \
     "$IMAGE_NAME" \
     sh -c "cp /project/app/build/outputs/apk/debug/$APK_NAME /output/$APK_NAME"
 

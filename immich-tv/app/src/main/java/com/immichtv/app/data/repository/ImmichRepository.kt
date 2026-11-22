@@ -1,6 +1,11 @@
 package com.immichtv.app.data.repository
 
 import com.immichtv.app.data.api.ApiClient
+import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import com.google.gson.reflect.TypeToken
 import com.immichtv.app.data.model.*
 
 sealed class Result<out T> {
@@ -47,7 +52,7 @@ class ImmichRepository(
         return try {
             val response = api.getTimeBucket(timeBucket = timeBucket)
             if (response.isSuccessful) {
-                Result.Success(response.body() ?: emptyList())
+                Result.Success(parseBucket(response.body()))
             } else {
                 Result.Error("Failed to load bucket: ${response.code()}")
             }
@@ -55,6 +60,51 @@ class ImmichRepository(
             Result.Error(e.message ?: "Unknown error")
         }
     }
+
+    /**
+     * Immich changed the /timeline/bucket response:
+     *  - older servers return a JSON array of asset objects;
+     *  - newer servers (v1.133+) return one object with parallel arrays
+     *    ("columnar"): { "id": [...], "isImage": [...], "duration": [...], ... }.
+     * Both are converted to a plain list of [Asset].
+     */
+    private fun parseBucket(body: JsonElement?): List<Asset> {
+        if (body == null || body.isJsonNull) return emptyList()
+        if (body.isJsonArray) {
+            val type = object : TypeToken<List<Asset>>() {}.type
+            return Gson().fromJson(body, type)
+        }
+        if (!body.isJsonObject) return emptyList()
+        val obj: JsonObject = body.asJsonObject
+        val ids = obj.arr("id") ?: return emptyList()
+        val isImage = obj.arr("isImage")
+        val isFavorite = obj.arr("isFavorite")
+        val duration = obj.arr("duration")
+        val createdAt = obj.arr("fileCreatedAt")
+        val thumbhash = obj.arr("thumbhash")
+        val ownerId = obj.arr("ownerId")
+        return (0 until ids.size()).map { i ->
+            Asset(
+                id = ids[i].asString,
+                type = if (isImage.bool(i) == false) "VIDEO" else "IMAGE",
+                isFavorite = isFavorite.bool(i) ?: false,
+                duration = duration.str(i),
+                fileCreatedAt = createdAt.str(i) ?: "",
+                localDateTime = createdAt.str(i) ?: "",
+                thumbhash = thumbhash.str(i),
+                ownerId = ownerId.str(i) ?: ""
+            )
+        }
+    }
+
+    private fun JsonObject.arr(name: String): JsonArray? =
+        get(name)?.takeIf { it.isJsonArray }?.asJsonArray
+
+    private fun JsonArray?.str(i: Int): String? =
+        this?.takeIf { i < it.size() }?.get(i)?.takeIf { !it.isJsonNull }?.asString
+
+    private fun JsonArray?.bool(i: Int): Boolean? =
+        this?.takeIf { i < it.size() }?.get(i)?.takeIf { !it.isJsonNull }?.asBoolean
 
     suspend fun getAlbums(): Result<List<Album>> {
         return try {

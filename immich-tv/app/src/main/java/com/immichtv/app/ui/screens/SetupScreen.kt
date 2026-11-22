@@ -1,6 +1,8 @@
 package com.immichtv.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
@@ -10,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,9 +42,12 @@ fun SetupScreen(
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.width(500.dp),
+            modifier = Modifier
+                .width(600.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Logo / title area
             Text(
@@ -93,77 +99,54 @@ fun SetupScreen(
             }
 
             // Server URL
-            OutlinedTextField(
+            LabeledField(
+                label = "Server URL",
+                hint = "Address of your Immich server, including http:// and the port (default 2283)",
                 value = state.serverUrl,
                 onValueChange = { viewModel.updateServerUrl(it) },
-                label = { Text("Server URL") },
-                placeholder = { Text("http://192.168.1.49:2283") },
+                placeholder = "http://192.168.1.49:2283",
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ImmichYellow,
-                    focusedLabelColor = ImmichYellow
-                ),
-                singleLine = true
+                )
             )
 
             if (state.authMode == "api_key") {
-                // API Key field
-                OutlinedTextField(
+                LabeledField(
+                    label = "API Key",
+                    hint = "Create one in Immich: Account Settings \u2192 API Keys \u2192 New API Key",
                     value = state.apiKey,
                     onValueChange = { viewModel.updateApiKey(it) },
-                    label = { Text("API Key") },
-                    placeholder = { Text("Your Immich API key") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    placeholder = "Paste your Immich API key",
+                    isSecret = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ImmichYellow,
-                        focusedLabelColor = ImmichYellow
-                    ),
-                    singleLine = true
+                    )
                 )
             } else {
-                // Email field
-                OutlinedTextField(
+                LabeledField(
+                    label = "Email",
+                    hint = "The email address you use to log in to Immich",
                     value = state.email,
                     onValueChange = { viewModel.updateEmail(it) },
-                    label = { Text("Email") },
-                    placeholder = { Text("you@example.com") },
+                    placeholder = "you@example.com",
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ImmichYellow,
-                        focusedLabelColor = ImmichYellow
-                    ),
-                    singleLine = true
+                    )
                 )
-
-                // Password field
-                OutlinedTextField(
+                LabeledField(
+                    label = "Password",
+                    hint = "Your Immich password",
                     value = state.password,
                     onValueChange = { viewModel.updatePassword(it) },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    placeholder = "Password",
+                    isSecret = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ImmichYellow,
-                        focusedLabelColor = ImmichYellow
-                    ),
-                    singleLine = true
+                    )
                 )
             }
 
@@ -188,15 +171,53 @@ fun SetupScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            if (state.authMode == "api_key") {
-                Text(
-                    text = "Get your API key from: Immich → Account Settings → API Keys",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF555555),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
         }
+    }
+}
+
+/** Input field with an always-visible label above it and a short explanation below it. */
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+private fun LabeledField(
+    label: String,
+    hint: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    keyboardOptions: KeyboardOptions,
+    isSecret: Boolean = false
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            color = Color.White
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = { Text(placeholder, color = Color(0xFF9E9E9E)) },
+            visualTransformation = if (isSecret) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = keyboardOptions,
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedBorderColor = ImmichYellow,
+                unfocusedBorderColor = Color(0xFFBBBBBB),
+                focusedPlaceholderColor = Color(0xFF9E9E9E),
+                unfocusedPlaceholderColor = Color(0xFF9E9E9E),
+                cursorColor = ImmichYellow
+            ),
+            singleLine = true
+        )
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFFCCCCCC)
+        )
     }
 }
