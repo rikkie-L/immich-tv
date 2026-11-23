@@ -111,10 +111,10 @@ fun SetupScreen(
             // Server URL
             LabeledField(
                 label = "Server URL",
-                hint = "Address of your Immich server, including http:// and the port (default 2283)",
+                hint = "Address of your Immich server, starting with https://",
                 value = state.serverUrl,
                 onValueChange = { viewModel.updateServerUrl(it) },
-                placeholder = "http://192.168.1.49:2283",
+                placeholder = "https://immich.familieleijen.nl",
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Next

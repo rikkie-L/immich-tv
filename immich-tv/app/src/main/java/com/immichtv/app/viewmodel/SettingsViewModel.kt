@@ -59,6 +59,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _state.update { it.copy(error = "Server URL and API key are required") }
                 return@launch
             }
+            if (!url.startsWith("https://", ignoreCase = true)) {
+                _state.update { it.copy(error = "Use an https:// address, for example https://immich.familieleijen.nl") }
+                return@launch
+            }
             _state.update { it.copy(isLoading = true, connectionStatus = "Connecting...", error = null) }
             val repo = ImmichRepository(url, key, "api_key")
             when (val result = repo.checkConnection()) {
@@ -81,6 +85,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val password = _state.value.password
             if (url.isEmpty() || email.isEmpty() || password.isEmpty()) {
                 _state.update { it.copy(error = "Server URL, email, and password are required") }
+                return@launch
+            }
+            if (!url.startsWith("https://", ignoreCase = true)) {
+                _state.update { it.copy(error = "Use an https:// address, for example https://immich.familieleijen.nl") }
                 return@launch
             }
             _state.update { it.copy(isLoading = true, connectionStatus = "Signing in...", error = null) }

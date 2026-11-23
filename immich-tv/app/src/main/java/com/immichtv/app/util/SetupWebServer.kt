@@ -120,8 +120,8 @@ class SetupWebServer(
             <form method="post" action="/submit">
               <input type="hidden" name="t" value="${escape(token)}">
               <label for="url">Server URL</label>
-              <input id="url" name="url" type="url" value="$url" placeholder="http://192.168.1.49:2283" required>
-              <small>Address of your Immich server, including http:// and the port.</small>
+              <input id="url" name="url" type="url" value="$url" placeholder="https://immich.familieleijen.nl" required>
+              <small>Address of your Immich server, starting with https://</small>
               <label for="key">API Key</label>
               <input id="key" name="key" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required>
               <small>Immich: Account Settings &rarr; API Keys &rarr; New API Key.</small>

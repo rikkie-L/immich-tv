@@ -21,9 +21,10 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.ImmichTV"
         android:banner="@drawable/ic_launcher"
-        android:usesCleartextTraffic="true">
-        <!-- usesCleartextTraffic: Immich usually runs on the LAN over plain
-             http://<ip>:2283. Android 9+ blocks http by default, so allow it. -->
+        android:usesCleartextTraffic="false">
+        <!-- HTTPS only: Immich is reached via the reverse proxy
+             (https://immich.familieleijen.nl). Plain http:// is refused.
+             The phone-setup page that the TV itself serves is not affected. -->
 
         <activity
             android:name=".MainActivity"
