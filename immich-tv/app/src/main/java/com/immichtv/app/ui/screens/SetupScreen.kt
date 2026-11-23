@@ -1,6 +1,10 @@
 package com.immichtv.app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -21,6 +25,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.tv.material3.*
 import com.immichtv.app.ui.theme.ImmichBackground
 import com.immichtv.app.ui.theme.ImmichYellow
+import com.immichtv.app.util.SetupWebServer
+import com.immichtv.app.util.qrCodeBitmap
 import com.immichtv.app.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -41,9 +47,13 @@ fun SetupScreen(
             .background(ImmichBackground),
         contentAlignment = Alignment.Center
     ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(48.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
         Column(
             modifier = Modifier
-                .width(600.dp)
+                .width(520.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -171,6 +181,89 @@ fun SetupScreen(
                 }
             }
 
+        }
+
+        // Phone setup: scan, paste on the phone, send to the TV
+        QrSetupPanel(
+            currentServerUrl = { state.serverUrl },
+            onReceived = { url, key ->
+                viewModel.setAuthMode("api_key")
+                viewModel.updateServerUrl(url)
+                viewModel.updateApiKey(key)
+                viewModel.testAndSave()
+            }
+        )
+        }
+    }
+}
+
+/**
+ * Shows a QR code that opens a small form on the phone. While this panel is
+ * visible the TV runs [SetupWebServer]; it stops as soon as the panel leaves
+ * the screen.
+ */
+@OptIn(ExperimentalTvMaterial3Api::class)
+@Composable
+private fun QrSetupPanel(
+    currentServerUrl: () -> String,
+    onReceived: (serverUrl: String, apiKey: String) -> Unit
+) {
+    val token = remember { SetupWebServer.newToken() }
+    val ip = remember { SetupWebServer.localIpv4() }
+    val latestServerUrl by rememberUpdatedState(currentServerUrl)
+    val latestOnReceived by rememberUpdatedState(onReceived)
+
+    DisposableEffect(token) {
+        val server = SetupWebServer(
+            port = SetupWebServer.PORT,
+            token = token,
+            prefillUrl = { latestServerUrl() },
+            onSubmit = { url, key -> latestOnReceived(url, key) }
+        )
+        server.start()
+        onDispose { server.stop() }
+    }
+
+    Column(
+        modifier = Modifier.width(300.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Or use your phone",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White
+        )
+        if (ip == null) {
+            Text(
+                text = "No network connection found on this TV.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFCCCCCC),
+                textAlign = TextAlign.Center
+            )
+        } else {
+            val link = "http://$ip:${SetupWebServer.PORT}/?t=$token"
+            val qr = remember(link) { qrCodeBitmap(link) }
+            Image(
+                bitmap = qr,
+                contentDescription = "QR code to set up this TV from your phone",
+                modifier = Modifier
+                    .size(220.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White)
+                    .padding(8.dp)
+            )
+            Text(
+                text = "Scan with your phone camera, paste the server URL and API key there, and tap Send to TV.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFCCCCCC),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "$ip:${SetupWebServer.PORT}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF9E9E9E)
+            )
         }
     }
 }

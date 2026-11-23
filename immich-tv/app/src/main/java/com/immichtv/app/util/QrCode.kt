@@ -1,0 +1,20 @@
+package com.immichtv.app.util
+
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
+
+/** Renders [text] as a black-on-white QR code. */
+fun qrCodeBitmap(text: String, size: Int = 512): ImageBitmap {
+    val matrix = QRCodeWriter().encode(
+        text, BarcodeFormat.QR_CODE, size, size,
+        mapOf(EncodeHintType.MARGIN to 1)
+    )
+    val pixels = IntArray(size * size) { i ->
+        if (matrix.get(i % size, i / size)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+    }
+    return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
+}
