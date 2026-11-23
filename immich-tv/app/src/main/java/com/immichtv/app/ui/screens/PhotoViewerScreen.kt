@@ -41,6 +41,10 @@ fun PhotoViewerScreen(
     }
     var showControls by remember { mutableStateOf(true) }
     var isSlideshow by remember { mutableStateOf(startSlideshow) }
+    // Photo the slideshow was started from: Back returns there.
+    var slideshowStartIndex by remember(assetId, assets) {
+        mutableIntStateOf(assets.indexOfFirst { it.id == assetId }.coerceAtLeast(0))
+    }
     var intervalIndex by remember { mutableIntStateOf(1) } // default 5s
     var videoPlaying by remember { mutableStateOf(true) }
     // Progress 0f–1f for image slideshow countdown
@@ -55,6 +59,23 @@ fun PhotoViewerScreen(
         currentIndex = if (currentIndex < assets.size - 1) currentIndex + 1 else 0
         slideshowProgress = 0f
         videoPlaying = true
+    }
+
+    fun toggleSlideshow() {
+        if (!isSlideshow) slideshowStartIndex = currentIndex
+        isSlideshow = !isSlideshow
+    }
+
+    /** Back: stop a running slideshow and go back to its start photo; otherwise leave the viewer. */
+    fun back() {
+        if (isSlideshow) {
+            isSlideshow = false
+            currentIndex = slideshowStartIndex
+            slideshowProgress = 0f
+            videoPlaying = true
+        } else {
+            onBack()
+        }
     }
 
     fun retreat() {
@@ -101,14 +122,14 @@ fun PhotoViewerScreen(
                     when (event.key) {
                         Key.DirectionLeft, Key.NavigatePrevious -> { retreat(); true }
                         Key.DirectionRight, Key.NavigateNext -> { advance(); true }
-                        Key.Back, Key.Escape -> { onBack(); true }
+                        Key.Back, Key.Escape -> { back(); true }
                         Key.MediaPlayPause -> {
                             if (isVideo) videoPlaying = !videoPlaying
-                            else isSlideshow = !isSlideshow
+                            else toggleSlideshow()
                             true
                         }
                         Key.Enter, Key.DirectionCenter -> {
-                            isSlideshow = !isSlideshow
+                            toggleSlideshow()
                             if (isVideo) videoPlaying = isSlideshow
                             true
                         }
@@ -211,7 +232,7 @@ fun PhotoViewerScreen(
                         }
                     }
                     Button(onClick = {
-                        isSlideshow = !isSlideshow
+                        toggleSlideshow()
                         if (isVideo) videoPlaying = isSlideshow
                     }) {
                         Text(if (isSlideshow) "Stop" else "Slideshow")

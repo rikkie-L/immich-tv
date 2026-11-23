@@ -3,6 +3,7 @@ package com.immichtv.app.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -38,6 +39,10 @@ fun MainScreen(
     var viewerState by remember { mutableStateOf<ViewerState?>(null) }
     var albumDetailId by remember { mutableStateOf<String?>(null) }
     var memoryDetailId by remember { mutableStateOf<String?>(null) }
+    // Kept here so the timeline keeps its scroll position while the viewer is open.
+    val photosListState = rememberLazyListState()
+    var lastPhotosMonth by remember { mutableStateOf<String?>(null) }
+    var focusMonth by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
 
     val photosState by homeViewModel.state.collectAsState()
@@ -49,7 +54,10 @@ fun MainScreen(
             assets = viewer.assets,
             getOriginalUrl = { homeViewModel.getOriginalUrl(it) },
             apiKey = photosState.apiKey,
-            onBack = { viewerState = null },
+            onBack = {
+                viewerState = null
+                focusMonth = lastPhotosMonth
+            },
             startSlideshow = viewer.slideshow
         )
         return
@@ -112,17 +120,27 @@ fun MainScreen(
             when {
                 currentDest == NavDestination.Photos -> {
                     PhotosScreen(
-                        onPhotoClick = { assetId, assets -> viewerState = ViewerState(assetId, assets) },
-                        viewModel = homeViewModel
+                        onPhotoClick = { assetId, assets, timeBucket ->
+                            lastPhotosMonth = timeBucket
+                            viewerState = ViewerState(assetId, assets)
+                        },
+                        viewModel = homeViewModel,
+                        listState = photosListState,
+                        focusMonth = focusMonth,
+                        onFocusRestored = { focusMonth = null }
                     )
                 }
                 currentDest == NavDestination.Memories && memoryDetailId != null -> {
                     val memoryId = memoryDetailId ?: return@NavigationDrawer
                     MemoryDetailScreen(
                         memoryId = memoryId,
-                        onPhotoClick = { assetId, assets -> viewerState = ViewerState(assetId, assets) },
+                        onPhotoClick = { assetId, assets ->
+                            lastPhotosMonth = null
+                            viewerState = ViewerState(assetId, assets)
+                        },
                         onSlideshow = { assets ->
                             assets.firstOrNull()?.let {
+                                lastPhotosMonth = null
                                 viewerState = ViewerState(it.id, assets, slideshow = true)
                             }
                         },
@@ -140,7 +158,10 @@ fun MainScreen(
                     val albumId = albumDetailId ?: return@NavigationDrawer
                     AlbumDetailScreen(
                         albumId = albumId,
-                        onPhotoClick = { assetId, assets -> viewerState = ViewerState(assetId, assets) },
+                        onPhotoClick = { assetId, assets ->
+                            lastPhotosMonth = null
+                            viewerState = ViewerState(assetId, assets)
+                        },
                         onBack = { albumDetailId = null },
                         viewModel = albumsViewModel
                     )
