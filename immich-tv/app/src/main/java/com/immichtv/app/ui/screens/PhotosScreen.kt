@@ -16,7 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.*
 import com.immichtv.app.data.model.Asset
 import com.immichtv.app.ui.components.PhotoCard
-import com.immichtv.app.ui.theme.ImmichBackground
+import com.immichtv.app.ui.theme.ImmichSurface
 import com.immichtv.app.ui.theme.ImmichYellow
 import com.immichtv.app.viewmodel.HomeViewModel
 
@@ -31,7 +31,7 @@ fun PhotosScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ImmichBackground)
+            .background(ImmichSurface)
     ) {
         when {
             state.isLoading && state.months.isEmpty() -> {

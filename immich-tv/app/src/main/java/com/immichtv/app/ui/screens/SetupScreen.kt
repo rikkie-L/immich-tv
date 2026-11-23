@@ -4,7 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import com.immichtv.app.R
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -60,10 +63,11 @@ fun SetupScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Logo / title area
-            Text(
-                text = "immich",
-                style = MaterialTheme.typography.displayMedium,
-                color = ImmichYellow
+            Image(
+                painter = painterResource(R.drawable.immich_logo),
+                contentDescription = "Immich",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.height(80.dp)
             )
             Text(
                 text = "Connect to your Immich server",

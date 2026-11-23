@@ -33,13 +33,14 @@ fun PhotoViewerScreen(
     assets: List<Asset>,
     getOriginalUrl: (String) -> String,
     apiKey: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    startSlideshow: Boolean = false
 ) {
     var currentIndex by remember(assetId, assets) {
         mutableIntStateOf(assets.indexOfFirst { it.id == assetId }.coerceAtLeast(0))
     }
     var showControls by remember { mutableStateOf(true) }
-    var isSlideshow by remember { mutableStateOf(false) }
+    var isSlideshow by remember { mutableStateOf(startSlideshow) }
     var intervalIndex by remember { mutableIntStateOf(1) } // default 5s
     var videoPlaying by remember { mutableStateOf(true) }
     // Progress 0f–1f for image slideshow countdown

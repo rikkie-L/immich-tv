@@ -15,7 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.*
 import com.immichtv.app.ui.components.AlbumCard
-import com.immichtv.app.ui.theme.ImmichBackground
+import com.immichtv.app.ui.theme.ImmichSurface
 import com.immichtv.app.ui.theme.ImmichYellow
 import com.immichtv.app.viewmodel.AlbumsViewModel
 
@@ -30,7 +30,7 @@ fun AlbumsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ImmichBackground)
+            .background(ImmichSurface)
     ) {
         when {
             state.isLoading -> {

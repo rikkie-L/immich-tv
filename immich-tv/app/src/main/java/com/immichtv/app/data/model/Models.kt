@@ -92,3 +92,18 @@ data class LoginResponse(
     val profileImagePath: String,
     val isAdmin: Boolean
 )
+
+/** A memory ("On this day", birthday) as returned by GET /api/memories. */
+data class Memory(
+    val id: String,
+    val type: String = "on_this_day",
+    val data: MemoryData? = null,
+    val memoryAt: String = "",
+    val assets: List<Asset> = emptyList(),
+    val isSaved: Boolean = false
+)
+
+data class MemoryData(
+    val year: Int? = null,
+    val personName: String? = null
+)

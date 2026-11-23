@@ -41,6 +41,12 @@ interface ImmichApi {
         @Query("isArchived") isArchived: Boolean = false
     ): Response<JsonElement>  // old Immich: array of assets; new Immich: columnar object
 
+    /** Memories for one day (yyyy-MM-dd). Needs the memory.read permission. */
+    @GET("api/memories")
+    suspend fun getMemories(
+        @Query("for") forDate: String? = null
+    ): Response<List<Memory>>
+
     @GET("api/server/about")
     suspend fun getServerInfo(): Response<ServerInfo>
 }

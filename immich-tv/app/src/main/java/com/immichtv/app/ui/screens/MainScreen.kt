@@ -1,9 +1,13 @@
 package com.immichtv.app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.immichtv.app.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -14,9 +18,11 @@ import com.immichtv.app.ui.theme.ImmichSurface
 import com.immichtv.app.ui.theme.ImmichYellow
 import com.immichtv.app.viewmodel.AlbumsViewModel
 import com.immichtv.app.viewmodel.HomeViewModel
+import com.immichtv.app.viewmodel.MemoriesViewModel
 
 enum class NavDestination(val label: String, val icon: String) {
     Photos("Photos", "🖼"),
+    Memories("Memories", "✨"),
     Albums("Albums", "📁"),
     Settings("Settings", "⚙")
 }
@@ -25,23 +31,26 @@ enum class NavDestination(val label: String, val icon: String) {
 @Composable
 fun MainScreen(
     homeViewModel: HomeViewModel = viewModel(),
-    albumsViewModel: AlbumsViewModel = viewModel()
+    albumsViewModel: AlbumsViewModel = viewModel(),
+    memoriesViewModel: MemoriesViewModel = viewModel()
 ) {
     var currentDest by remember { mutableStateOf(NavDestination.Photos) }
-    var viewerState by remember { mutableStateOf<Pair<String, List<Asset>>?>(null) }
+    var viewerState by remember { mutableStateOf<ViewerState?>(null) }
     var albumDetailId by remember { mutableStateOf<String?>(null) }
+    var memoryDetailId by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
 
     val photosState by homeViewModel.state.collectAsState()
 
     // Full-screen photo viewer
-    viewerState?.let { (assetId, assets) ->
+    viewerState?.let { viewer ->
         PhotoViewerScreen(
-            assetId = assetId,
-            assets = assets,
+            assetId = viewer.assetId,
+            assets = viewer.assets,
             getOriginalUrl = { homeViewModel.getOriginalUrl(it) },
             apiKey = photosState.apiKey,
-            onBack = { viewerState = null }
+            onBack = { viewerState = null },
+            startSlideshow = viewer.slideshow
         )
         return
     }
@@ -53,20 +62,22 @@ fun MainScreen(
     }
 
     NavigationDrawer(
-        modifier = Modifier.fillMaxSize().background(ImmichBackground),
+        modifier = Modifier.fillMaxSize().background(ImmichSurface),
         drawerContent = {
             Column(
                 modifier = Modifier
                     .width(220.dp)
                     .fillMaxHeight()
-                    .background(ImmichSurface)
+                    .background(ImmichBackground)
                     .padding(vertical = 24.dp, horizontal = 12.dp)
             ) {
-                Text(
-                    text = "immich",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = ImmichYellow,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp)
+                Image(
+                    painter = painterResource(R.drawable.immich_logo),
+                    contentDescription = "Immich",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 16.dp)
+                        .height(48.dp)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -81,6 +92,7 @@ fun MainScreen(
                             } else {
                                 currentDest = dest
                                 albumDetailId = null
+                                memoryDetailId = null
                             }
                         },
                         leadingContent = {
@@ -100,15 +112,35 @@ fun MainScreen(
             when {
                 currentDest == NavDestination.Photos -> {
                     PhotosScreen(
-                        onPhotoClick = { assetId, assets -> viewerState = Pair(assetId, assets) },
+                        onPhotoClick = { assetId, assets -> viewerState = ViewerState(assetId, assets) },
                         viewModel = homeViewModel
+                    )
+                }
+                currentDest == NavDestination.Memories && memoryDetailId != null -> {
+                    val memoryId = memoryDetailId ?: return@NavigationDrawer
+                    MemoryDetailScreen(
+                        memoryId = memoryId,
+                        onPhotoClick = { assetId, assets -> viewerState = ViewerState(assetId, assets) },
+                        onSlideshow = { assets ->
+                            assets.firstOrNull()?.let {
+                                viewerState = ViewerState(it.id, assets, slideshow = true)
+                            }
+                        },
+                        onBack = { memoryDetailId = null },
+                        viewModel = memoriesViewModel
+                    )
+                }
+                currentDest == NavDestination.Memories -> {
+                    MemoriesScreen(
+                        onMemoryClick = { memoryDetailId = it },
+                        viewModel = memoriesViewModel
                     )
                 }
                 currentDest == NavDestination.Albums && albumDetailId != null -> {
                     val albumId = albumDetailId ?: return@NavigationDrawer
                     AlbumDetailScreen(
                         albumId = albumId,
-                        onPhotoClick = { assetId, assets -> viewerState = Pair(assetId, assets) },
+                        onPhotoClick = { assetId, assets -> viewerState = ViewerState(assetId, assets) },
                         onBack = { albumDetailId = null },
                         viewModel = albumsViewModel
                     )
@@ -124,3 +156,10 @@ fun MainScreen(
         }
     }
 }
+
+/** What the full-screen viewer shows, and whether it starts as a slideshow. */
+private data class ViewerState(
+    val assetId: String,
+    val assets: List<Asset>,
+    val slideshow: Boolean = false
+)

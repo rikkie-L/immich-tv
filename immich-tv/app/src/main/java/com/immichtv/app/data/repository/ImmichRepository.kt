@@ -106,6 +106,21 @@ class ImmichRepository(
     private fun JsonArray?.bool(i: Int): Boolean? =
         this?.takeIf { i < it.size() }?.get(i)?.takeIf { !it.isJsonNull }?.asBoolean
 
+    suspend fun getMemories(forDate: String): Result<List<Memory>> {
+        return try {
+            val response = api.getMemories(forDate = forDate)
+            when {
+                response.isSuccessful -> Result.Success(response.body() ?: emptyList())
+                response.code() == 403 -> Result.Error(
+                    "No access to memories (403). Give the API key the memory.read permission in Immich."
+                )
+                else -> Result.Error("Failed to load memories: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Result.Error(e.message ?: "Unknown error")
+        }
+    }
+
     suspend fun getAlbums(): Result<List<Album>> {
         return try {
             val response = api.getAlbums()
