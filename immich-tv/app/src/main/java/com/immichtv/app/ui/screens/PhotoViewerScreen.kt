@@ -33,7 +33,7 @@ fun PhotoViewerScreen(
     assets: List<Asset>,
     getOriginalUrl: (String) -> String,
     apiKey: String,
-    onBack: () -> Unit,
+    onBack: (lastAssetId: String) -> Unit,
     startSlideshow: Boolean = false
 ) {
     var currentIndex by remember(assetId, assets) {
@@ -74,7 +74,7 @@ fun PhotoViewerScreen(
             slideshowProgress = 0f
             videoPlaying = true
         } else {
-            onBack()
+            onBack(assets[currentIndex].id)
         }
     }
 
@@ -176,7 +176,7 @@ fun PhotoViewerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Back
-                Button(onClick = onBack) { Text("← Back") }
+                Button(onClick = { onBack(currentAsset.id) }) { Text("← Back") }
 
                 // Counter + type badge
                 Row(

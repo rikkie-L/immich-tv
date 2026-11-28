@@ -81,6 +81,7 @@ class ImmichRepository(
         val isFavorite = obj.arr("isFavorite")
         val duration = obj.arr("duration")
         val createdAt = obj.arr("fileCreatedAt")
+        val offsetHours = obj.arr("localOffsetHours")
         val thumbhash = obj.arr("thumbhash")
         val ownerId = obj.arr("ownerId")
         return (0 until ids.size()).map { i ->
@@ -90,12 +91,30 @@ class ImmichRepository(
                 isFavorite = isFavorite.bool(i) ?: false,
                 duration = duration.str(i),
                 fileCreatedAt = createdAt.str(i) ?: "",
-                localDateTime = createdAt.str(i) ?: "",
+                localDateTime = localTime(createdAt.str(i), offsetHours.num(i)),
                 thumbhash = thumbhash.str(i),
                 ownerId = ownerId.str(i) ?: ""
             )
         }
     }
+
+    /** fileCreatedAt is UTC; add the offset to get the time as the photographer saw it. */
+    private fun localTime(utc: String?, offsetHours: Double?): String {
+        if (utc.isNullOrEmpty()) return ""
+        return try {
+            val seconds = ((offsetHours ?: 0.0) * 3600).toLong()
+            java.time.OffsetDateTime.parse(utc)
+                .toInstant()
+                .atOffset(java.time.ZoneOffset.ofTotalSeconds(seconds.toInt()))
+                .toLocalDateTime()
+                .toString()
+        } catch (_: Exception) {
+            utc
+        }
+    }
+
+    private fun JsonArray?.num(i: Int): Double? =
+        this?.takeIf { i < it.size() }?.get(i)?.takeIf { !it.isJsonNull }?.asDouble
 
     private fun JsonObject.arr(name: String): JsonArray? =
         get(name)?.takeIf { it.isJsonArray }?.asJsonArray
@@ -106,7 +125,8 @@ class ImmichRepository(
     private fun JsonArray?.bool(i: Int): Boolean? =
         this?.takeIf { i < it.size() }?.get(i)?.takeIf { !it.isJsonNull }?.asBoolean
 
-    suspend fun getMemories(forDate: String): Result<List<Memory>> {
+    /** Memories for one day (yyyy-MM-dd), or all memories when [forDate] is null. */
+    suspend fun getMemories(forDate: String? = null): Result<List<Memory>> {
         return try {
             val response = api.getMemories(forDate = forDate)
             when {

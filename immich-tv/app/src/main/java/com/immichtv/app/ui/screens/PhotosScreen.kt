@@ -11,6 +11,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,12 +36,13 @@ fun PhotosScreen(
     viewModel: HomeViewModel = viewModel(),
     listState: LazyListState = rememberLazyListState(),
     focusMonth: String? = null,
+    focusAssetId: String? = null,
     onFocusRestored: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val monthFocus = remember { FocusRequester() }
 
-    // Coming back from the viewer: put focus on the first photo of that month.
+    // Coming back from the viewer: put focus on the first photo of the day being viewed.
     LaunchedEffect(focusMonth, state.months.size) {
         val target = focusMonth ?: return@LaunchedEffect
         val index = state.months.indexOfFirst { it.timeBucket == target }
@@ -114,21 +118,42 @@ fun PhotosScreen(
                                     )
                                 }
                             } else if (month.assets.isNotEmpty()) {
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    contentPadding = PaddingValues(end = 8.dp)
-                                ) {
-                                    itemsIndexed(month.assets) { i, asset ->
-                                        val isReturnTarget = i == 0 && month.timeBucket == focusMonth
-                                        PhotoCard(
-                                            thumbnailUrl = viewModel.getThumbnailUrl(asset.id),
-                                            apiKey = state.apiKey,
-                                            isVideo = asset.type.uppercase() == "VIDEO",
-                                            onClick = { onPhotoClick(asset.id, month.assets, month.timeBucket) },
-                                            modifier = Modifier
-                                                .size(160.dp)
-                                                .then(if (isReturnTarget) Modifier.focusRequester(monthFocus) else Modifier)
-                                        )
+                                // One row per day, newest day first, e.g. "Friday 27 November".
+                                val days = remember(month.assets) {
+                                    month.assets.groupBy { dayKey(it) }.toList()
+                                }
+                                // Day of the photo that was on screen when Back was pressed.
+                                val returnDay = if (month.timeBucket == focusMonth) {
+                                    month.assets.firstOrNull { it.id == focusAssetId }?.let { dayKey(it) }
+                                        ?: days.firstOrNull()?.first
+                                } else null
+                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    days.forEach { (day, dayAssets) ->
+                                        Column {
+                                            Text(
+                                                text = dayLabel(day, dayAssets.size),
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = Color(0xFFB0B0B0),
+                                                modifier = Modifier.padding(bottom = 8.dp)
+                                            )
+                                            LazyRow(
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                contentPadding = PaddingValues(end = 8.dp)
+                                            ) {
+                                                itemsIndexed(dayAssets) { i, asset ->
+                                                    val isReturnTarget = i == 0 && day == returnDay
+                                                    PhotoCard(
+                                                        thumbnailUrl = viewModel.getThumbnailUrl(asset.id),
+                                                        apiKey = state.apiKey,
+                                                        isVideo = asset.type.uppercase() == "VIDEO",
+                                                        onClick = { onPhotoClick(asset.id, month.assets, month.timeBucket) },
+                                                        modifier = Modifier
+                                                            .size(160.dp)
+                                                            .then(if (isReturnTarget) Modifier.focusRequester(monthFocus) else Modifier)
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -138,4 +163,20 @@ fun PhotosScreen(
             }
         }
     }
+}
+
+/** The day a photo was taken (yyyy-MM-dd), in the photographer's local time. */
+private fun dayKey(asset: Asset): String =
+    asset.localDateTime.ifEmpty { asset.fileCreatedAt }.take(10)
+
+/** "Friday 27 November · 12" in the TV's language, e.g. "Vrijdag 27 november · 12". */
+private fun dayLabel(day: String, count: Int): String {
+    val text = try {
+        LocalDate.parse(day)
+            .format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.getDefault()))
+            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+    } catch (_: Exception) {
+        day.ifEmpty { "Unknown date" }
+    }
+    return "$text \u00B7 $count"
 }

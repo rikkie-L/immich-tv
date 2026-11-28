@@ -2,6 +2,9 @@ package com.immichtv.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -22,9 +25,13 @@ import com.immichtv.app.ui.components.PhotoCard
 import com.immichtv.app.ui.theme.ImmichSurface
 import com.immichtv.app.ui.theme.ImmichYellow
 import com.immichtv.app.viewmodel.MemoriesViewModel
+import com.immichtv.app.viewmodel.day
 import com.immichtv.app.viewmodel.title
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
-/** List of today's memories. */
+/** All memories Immich has made, grouped per day, newest first. */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun MemoriesScreen(
@@ -48,36 +55,64 @@ fun MemoriesScreen(
                 Button(onClick = { viewModel.loadMemories() }) { Text("Retry") }
             }
             state.memories.isEmpty() -> Text(
-                "No memories for today",
+                "No memories yet",
                 color = Color(0xFF888888),
                 modifier = Modifier.align(Alignment.Center)
             )
-            else -> Column(modifier = Modifier.fillMaxSize()) {
-                Text(
-                    text = "Memories",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color(0xFFEAEAEA),
-                    modifier = Modifier.padding(horizontal = 40.dp, vertical = 24.dp)
-                )
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 200.dp),
-                    contentPadding = PaddingValues(horizontal = 40.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
+            else -> {
+                // One row per day the memories were made for, newest first.
+                val days = remember(state.memories) { state.memories.groupBy { it.day() }.toList() }
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 40.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(28.dp)
                 ) {
-                    items(state.memories) { memory ->
-                        AlbumCard(
-                            name = memory.title(),
-                            thumbnailUrl = memory.assets.firstOrNull()?.let { viewModel.getThumbnailUrl(it.id) },
-                            apiKey = state.apiKey,
-                            assetCount = memory.assets.size,
-                            onClick = { onMemoryClick(memory.id) }
+                    item {
+                        Text(
+                            text = "Memories",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = Color(0xFFEAEAEA)
                         )
+                    }
+                    items(days, key = { it.first }) { (day, memories) ->
+                        Column {
+                            Text(
+                                text = memoryDayLabel(day),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFFB0B0B0),
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(end = 8.dp)
+                            ) {
+                                items(memories, key = { it.id }) { memory ->
+                                    AlbumCard(
+                                        name = memory.title(),
+                                        thumbnailUrl = memory.assets.firstOrNull()?.let { viewModel.getThumbnailUrl(it.id) },
+                                        apiKey = state.apiKey,
+                                        assetCount = memory.assets.size,
+                                        onClick = { onMemoryClick(memory.id) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/** "Today", "Yesterday", or e.g. "Vrijdag 27 november 2026" in the TV's language. */
+private fun memoryDayLabel(day: String): String {
+    val date = try { LocalDate.parse(day) } catch (_: Exception) { return day }
+    val today = LocalDate.now()
+    return when (date) {
+        today -> "Today"
+        today.minusDays(1) -> "Yesterday"
+        else -> date.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", Locale.getDefault()))
+            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
     }
 }
 

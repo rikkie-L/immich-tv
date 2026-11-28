@@ -39,14 +39,21 @@ class MemoriesViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /** Loads today's memories, like the row at the top of Immich's own timeline. */
+    /**
+     * Loads all memories Immich has made, newest first. Memories that are
+     * planned for a later day (Immich creates them ahead) are left out.
+     */
     fun loadMemories() {
         val repo = repository ?: return
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            when (val result = repo.getMemories(LocalDate.now().toString())) {
-                is Result.Success -> _state.update {
-                    it.copy(memories = result.data.filter { m -> m.assets.isNotEmpty() }, isLoading = false)
+            when (val result = repo.getMemories()) {
+                is Result.Success -> {
+                    val today = LocalDate.now().toString()
+                    val memories = result.data
+                        .filter { it.assets.isNotEmpty() && it.day() <= today }
+                        .sortedByDescending { it.memoryAt }
+                    _state.update { it.copy(memories = memories, isLoading = false) }
                 }
                 is Result.Error -> _state.update { it.copy(error = result.message, isLoading = false) }
                 else -> {}
@@ -58,11 +65,15 @@ class MemoriesViewModel(application: Application) : AndroidViewModel(application
         repository?.getThumbnailUrl(assetId) ?: ""
 }
 
-/** Title as Immich shows it: "3 years ago", or "Anna's birthday". */
+/** The day this memory is for (yyyy-MM-dd). */
+fun Memory.day(): String = memoryAt.take(10)
+
+/** Title as Immich shows it: "3 years ago" (counted from the memory's own day), or "Anna's birthday". */
 fun Memory.title(): String = when (type) {
     "birthday" -> data?.personName?.let { "$it's birthday" } ?: "Birthday"
     else -> data?.year?.let { year ->
-        val n = LocalDate.now().year - year
+        val memoryYear = day().take(4).toIntOrNull() ?: LocalDate.now().year
+        val n = memoryYear - year
         if (n == 1) "1 year ago" else "$n years ago"
     } ?: "On this day"
 }

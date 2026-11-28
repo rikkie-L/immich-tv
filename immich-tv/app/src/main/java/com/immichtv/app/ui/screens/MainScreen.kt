@@ -43,6 +43,7 @@ fun MainScreen(
     val photosListState = rememberLazyListState()
     var lastPhotosMonth by remember { mutableStateOf<String?>(null) }
     var focusMonth by remember { mutableStateOf<String?>(null) }
+    var focusAssetId by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
 
     val photosState by homeViewModel.state.collectAsState()
@@ -54,9 +55,10 @@ fun MainScreen(
             assets = viewer.assets,
             getOriginalUrl = { homeViewModel.getOriginalUrl(it) },
             apiKey = photosState.apiKey,
-            onBack = {
+            onBack = { lastAssetId ->
                 viewerState = null
                 focusMonth = lastPhotosMonth
+                focusAssetId = lastAssetId
             },
             startSlideshow = viewer.slideshow
         )
@@ -127,7 +129,11 @@ fun MainScreen(
                         viewModel = homeViewModel,
                         listState = photosListState,
                         focusMonth = focusMonth,
-                        onFocusRestored = { focusMonth = null }
+                        focusAssetId = focusAssetId,
+                        onFocusRestored = {
+                            focusMonth = null
+                            focusAssetId = null
+                        }
                     )
                 }
                 currentDest == NavDestination.Memories && memoryDetailId != null -> {
